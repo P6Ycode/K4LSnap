@@ -2,8 +2,8 @@ Package: com.p6ycode.k4lsnap
 Name: K4LSnap
 Version: 0.1.0
 Architecture: iphoneos-arm
-Description: Modular Snapchat tweak reconstruction.
+Description: Gallery import and local Media Vault system for Snapchat.
 Maintainer: P6Ycode
 Author: P6Ycode
 Section: Tweaks
-Depends: mobilesubstrate
+Depends: mobilesubstrate, preferenceloader
