@@ -1,6 +1,7 @@
 #import "K4LVaultViewController.h"
 #import "K4LVaultStore.h"
 #import "K4LMediaPreviewController.h"
+#import "K4LMetadataEditorViewController.h"
 #import "K4LGalleryUploadCoordinator.h"
 #import "K4LSystem.h"
 
@@ -38,7 +39,7 @@ static void K4LVaultChangedCallback(CFNotificationCenterRef center, void *observ
     self.searchController = [[UISearchController alloc] initWithSearchResultsController:nil];
     self.searchController.obscuresBackgroundDuringPresentation = NO;
     self.searchController.searchResultsUpdater = self;
-    self.searchController.searchBar.placeholder = @"Search account, friend, category, or type";
+    self.searchController.searchBar.placeholder = @"Search caption, account, friend, category, or type";
     self.navigationItem.searchController = self.searchController;
     self.navigationItem.hidesSearchBarWhenScrolling = YES;
     self.definesPresentationContext = YES;
@@ -48,6 +49,11 @@ static void K4LVaultChangedCallback(CFNotificationCenterRef center, void *observ
     [self.refreshControl addTarget:self action:@selector(reloadVault) forControlEvents:UIControlEventValueChanged];
 
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), (__bridge const void *)(self), K4LVaultChangedCallback, (__bridge CFStringRef)K4LNotifyVaultChanged, NULL, CFNotificationSuspensionBehaviorDeliverImmediately);
+    [self reloadVault];
+}
+
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
     [self reloadVault];
 }
 
@@ -90,7 +96,14 @@ static void K4LVaultChangedCallback(CFNotificationCenterRef center, void *observ
         self.filteredItems = self.items;
     } else {
         self.filteredItems = [self.items filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(K4LVaultItem *item, NSDictionary *bindings) {
-            NSArray<NSString *> *fields = @[item.accountID ?: @"", item.friendID ?: @"", item.category ?: @"", item.mediaType ?: @"", item.relativePath ?: @""];
+            NSArray<NSString *> *fields = @[
+                item.caption ?: @"",
+                item.accountID ?: @"",
+                item.friendID ?: @"",
+                item.category ?: @"",
+                item.mediaType ?: @"",
+                item.relativePath ?: @""
+            ];
             for (NSString *field in fields) if ([field.lowercaseString containsString:needle]) return YES;
             return NO;
         }]];
@@ -109,6 +122,12 @@ static void K4LVaultChangedCallback(CFNotificationCenterRef center, void *observ
     return self.filteredItems.count ? nil : @"Import an image or video to begin.";
 }
 
+- (NSString *)durationTextForItem:(K4LVaultItem *)item {
+    if (![item.mediaType isEqualToString:@"video"] || item.duration <= 0) return nil;
+    NSInteger totalSeconds = (NSInteger)llround(item.duration);
+    return [NSString stringWithFormat:@"%ld:%02ld", (long)(totalSeconds / 60), (long)(totalSeconds % 60)];
+}
+
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     static NSString *identifier = @"K4LVaultCell";
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifier];
@@ -118,10 +137,27 @@ static void K4LVaultChangedCallback(CFNotificationCenterRef center, void *observ
     NSString *scope = item.category.length ? item.category : @"Uncategorized";
     if (item.friendID.length) scope = [scope stringByAppendingFormat:@" · %@", item.friendID];
     else if (item.accountID.length) scope = [scope stringByAppendingFormat:@" · %@", item.accountID];
-    cell.textLabel.text = scope;
+    cell.textLabel.text = item.caption.length ? item.caption : scope;
+
     NSDate *date = [NSDate dateWithTimeIntervalSince1970:item.createdAt];
-    cell.detailTextLabel.text = [NSString stringWithFormat:@"%@ · %@ · %@", item.mediaType.capitalizedString, [self.byteFormatter stringFromByteCount:(long long)item.byteSize], [self.dateFormatter stringFromDate:date]];
-    cell.imageView.image = [UIImage systemImageNamed:[item.mediaType isEqualToString:@"video"] ? @"film" : @"photo"];
+    NSMutableArray<NSString *> *details = [NSMutableArray arrayWithObjects:
+        item.mediaType.capitalizedString,
+        [self.byteFormatter stringFromByteCount:(long long)item.byteSize],
+        [self.dateFormatter stringFromDate:date], nil];
+    NSString *duration = [self durationTextForItem:item];
+    if (duration.length) [details insertObject:duration atIndex:1];
+    if (item.caption.length) [details insertObject:scope atIndex:0];
+    cell.detailTextLabel.text = [details componentsJoinedByString:@" · "];
+
+    UIImage *thumbnail = nil;
+    if (item.thumbnailRelativePath.length) {
+        NSString *path = [K4LThumbnailDirectory() stringByAppendingPathComponent:item.thumbnailRelativePath];
+        thumbnail = [UIImage imageWithContentsOfFile:path];
+    }
+    cell.imageView.image = thumbnail ?: [UIImage systemImageNamed:[item.mediaType isEqualToString:@"video"] ? @"film" : @"photo"];
+    cell.imageView.contentMode = UIViewContentModeScaleAspectFill;
+    cell.imageView.clipsToBounds = YES;
+    cell.imageView.layer.cornerRadius = 7;
     cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
     return cell;
 }
@@ -141,6 +177,10 @@ static void K4LVaultChangedCallback(CFNotificationCenterRef center, void *observ
         [self presentViewController:activity animated:YES completion:nil];
         completionHandler(YES);
     }];
+    UIContextualAction *edit = [UIContextualAction contextualActionWithStyle:UIContextualActionStyleNormal title:@"Edit" handler:^(__unused UIContextualAction *action, __unused UIView *sourceView, void (^completionHandler)(BOOL)) {
+        [self.navigationController pushViewController:[[K4LMetadataEditorViewController alloc] initWithItem:item] animated:YES];
+        completionHandler(YES);
+    }];
     UIContextualAction *delete = [UIContextualAction contextualActionWithStyle:UIContextualActionStyleDestructive title:@"Delete" handler:^(__unused UIContextualAction *action, __unused UIView *sourceView, void (^completionHandler)(BOOL)) {
         NSError *error = nil;
         BOOL ok = [[K4LVaultStore shared] deleteItem:item error:&error];
@@ -148,7 +188,7 @@ static void K4LVaultChangedCallback(CFNotificationCenterRef center, void *observ
         [self reloadVault];
         completionHandler(ok);
     }];
-    return [UISwipeActionsConfiguration configurationWithActions:@[delete, share]];
+    return [UISwipeActionsConfiguration configurationWithActions:@[delete, edit, share]];
 }
 
 - (void)presentError:(NSError *)error {
