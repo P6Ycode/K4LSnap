@@ -21,3 +21,6 @@ K4LSnap_FRAMEWORKS = UIKit Photos PhotosUI AVFoundation AVKit UniformTypeIdentif
 K4LSnap_LIBRARIES = sqlite3
 
 include $(THEOS_MAKE_PATH)/tweak.mk
+
+SUBPROJECTS += prefs
+include $(THEOS_MAKE_PATH)/aggregate.mk
