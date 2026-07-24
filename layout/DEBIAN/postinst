@@ -1,0 +1,24 @@
+#!/bin/sh
+set -e
+
+PLIST="/Library/LaunchDaemons/com.p6ycode.k4lsnapd.plist"
+if [ -d /var/jb ]; then
+    PREFIX="/var/jb"
+else
+    PREFIX=""
+fi
+
+if [ -f "$PLIST" ]; then
+    /usr/bin/sed -i "s#<string>/var/jb/usr/libexec/k4lsnapd</string>#<string>${PREFIX}/usr/libexec/k4lsnapd</string>#" "$PLIST" 2>/dev/null || true
+    /bin/chmod 644 "$PLIST" || true
+    /usr/bin/chown root:wheel "$PLIST" || true
+fi
+
+/bin/mkdir -p "/var/mobile/Library/Application Support/K4LSnap" "/var/mobile/Library/Application Support/K4LSnap/Media" "/var/mobile/Library/Application Support/K4LSnap/Thumbnails" "/var/mobile/Library/Application Support/K4LSnap/Temp" "/var/mobile/Library/Application Support/K4LSnap/Drafts"
+/usr/bin/chown -R mobile:mobile "/var/mobile/Library/Application Support/K4LSnap" || true
+
+/bin/launchctl bootout system/com.p6ycode.k4lsnapd 2>/dev/null || true
+/bin/launchctl bootstrap system "$PLIST" 2>/dev/null || /bin/launchctl load "$PLIST" 2>/dev/null || true
+/bin/launchctl kickstart -k system/com.p6ycode.k4lsnapd 2>/dev/null || true
+
+exit 0
