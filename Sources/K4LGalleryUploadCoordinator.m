@@ -36,8 +36,10 @@
     NSString *typeIdentifier = [provider hasItemConformingToTypeIdentifier:UTTypeMovie.identifier] ? UTTypeMovie.identifier : UTTypeImage.identifier;
     [provider loadFileRepresentationForTypeIdentifier:typeIdentifier completionHandler:^(NSURL *url, NSError *error) {
         if (!url || error) { [self presentError:error ?: [NSError errorWithDomain:@"com.p6ycode.k4lsnap.gallery" code:1 userInfo:@{NSLocalizedDescriptionKey:@"Unable to load selected media"}]]; return; }
-        NSURL *temporary = [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:[NSUUID.UUID.UUIDString stringByAppendingPathExtension:url.pathExtension]]];
+        NSString *extension = url.pathExtension.length ? url.pathExtension : @"bin";
+        NSURL *temporary = [NSURL fileURLWithPath:[K4LTemporaryDirectory() stringByAppendingPathComponent:[NSUUID.UUID.UUIDString stringByAppendingPathExtension:extension]]];
         NSError *copyError = nil;
+        [NSFileManager.defaultManager removeItemAtURL:temporary error:nil];
         [NSFileManager.defaultManager copyItemAtURL:url toURL:temporary error:&copyError];
         if (copyError) { [self presentError:copyError]; return; }
         [self importAndShareURL:temporary];
