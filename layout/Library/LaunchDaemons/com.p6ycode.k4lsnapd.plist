@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.p6ycode.k4lsnapd</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/var/jb/usr/libexec/k4lsnapd</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+    <key>ProcessType</key>
+    <string>Background</string>
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+    <key>StandardOutPath</key>
+    <string>/var/mobile/Library/Logs/K4LSnapDaemon.log</string>
+    <key>StandardErrorPath</key>
+    <string>/var/mobile/Library/Logs/K4LSnapDaemon.log</string>
+</dict>
+</plist>
