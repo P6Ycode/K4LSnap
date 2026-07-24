@@ -163,13 +163,14 @@
     self.shareAfterSaveSwitch.on = YES;
     [stack addArrangedSubview:[self switchRowWithTitle:@"Open share sheet after saving" control:self.shareAfterSaveSwitch]];
 
-    self.saveButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    [self.saveButton setTitle:@"Process and Save to Vault" forState:UIControlStateNormal];
-    self.saveButton.titleLabel.font = [UIFont preferredFontForTextStyle:UIFontTextStyleHeadline];
-    self.saveButton.backgroundColor = UIColor.systemBlueColor;
-    [self.saveButton setTitleColor:UIColor.whiteColor forState:UIControlStateNormal];
-    self.saveButton.layer.cornerRadius = 12;
-    self.saveButton.contentEdgeInsets = UIEdgeInsetsMake(14, 18, 14, 18);
+    UIButtonConfiguration *saveConfiguration = [UIButtonConfiguration filledButtonConfiguration];
+    saveConfiguration.attributedTitle = [[NSAttributedString alloc] initWithString:@"Process and Save to Vault"
+                                                                          attributes:@{NSFontAttributeName: [UIFont preferredFontForTextStyle:UIFontTextStyleHeadline]}];
+    saveConfiguration.baseBackgroundColor = UIColor.systemBlueColor;
+    saveConfiguration.baseForegroundColor = UIColor.whiteColor;
+    saveConfiguration.cornerStyle = UIButtonConfigurationCornerStyleMedium;
+    saveConfiguration.contentInsets = NSDirectionalEdgeInsetsMake(14, 18, 14, 18);
+    self.saveButton = [UIButton buttonWithConfiguration:saveConfiguration primaryAction:nil];
     [self.saveButton addTarget:self action:@selector(processAndSave) forControlEvents:UIControlEventTouchUpInside];
     [stack addArrangedSubview:self.saveButton];
 
