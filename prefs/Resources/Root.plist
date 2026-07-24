@@ -2,63 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <array>
-    <dict>
-        <key>cell</key>
-        <string>PSGroupCell</string>
-        <key>label</key>
-        <string>Features</string>
-        <key>footerText</key>
-        <string>The floating K4L button opens Gallery Upload, Files, Media Vault, and in-app diagnostics.</string>
-    </dict>
-    <dict>
-        <key>cell</key>
-        <string>PSSwitchCell</string>
-        <key>label</key>
-        <string>Gallery Upload</string>
-        <key>defaults</key>
-        <string>com.p6ycode.k4lsnap</string>
-        <key>key</key>
-        <string>galleryUploadEnabled</string>
-        <key>default</key>
-        <true/>
-        <key>PostNotification</key>
-        <string>com.p6ycode.k4lsnap/reload</string>
-    </dict>
-    <dict>
-        <key>cell</key>
-        <string>PSSwitchCell</string>
-        <key>label</key>
-        <string>Floating Launcher</string>
-        <key>defaults</key>
-        <string>com.p6ycode.k4lsnap</string>
-        <key>key</key>
-        <string>launcherEnabled</string>
-        <key>default</key>
-        <true/>
-        <key>PostNotification</key>
-        <string>com.p6ycode.k4lsnap/reload</string>
-    </dict>
-    <dict>
-        <key>cell</key>
-        <string>PSGroupCell</string>
-        <key>label</key>
-        <string>Media Preparation</string>
-        <key>footerText</key>
-        <string>Images support rotation, center crop, and resize. Videos support trim ranges, export quality selection, and poster-frame thumbnails. Caption, account, friend, and category metadata are stored in the vault.</string>
-    </dict>
-    <dict>
-        <key>cell</key>
-        <string>PSGroupCell</string>
-        <key>label</key>
-        <string>Maintenance</string>
-        <key>footerText</key>
-        <string>k4lsnapd performs periodic integrity checks, stale draft cleanup, and thumbnail repair. k4lsnapctl exposes health, prune, repair-thumbnails, vacuum, reload, ping, and status commands.</string>
-    </dict>
-    <dict>
-        <key>cell</key>
-        <string>PSGroupCell</string>
-        <key>footerText</key>
-        <string>K4LSnap 0.3.0</string>
-    </dict>
+    <dict><key>cell</key><string>PSGroupCell</string><key>label</key><string>Features</string><key>footerText</key><string>The floating K4L button opens Gallery Upload, Files, Media Vault, and in-app diagnostics.</string></dict>
+    <dict><key>cell</key><string>PSSwitchCell</string><key>label</key><string>Gallery Upload</string><key>defaults</key><string>com.p6ycode.k4lsnap</string><key>key</key><string>galleryUploadEnabled</string><key>default</key><true/><key>PostNotification</key><string>com.p6ycode.k4lsnap/reload</string></dict>
+    <dict><key>cell</key><string>PSSwitchCell</string><key>label</key><string>Floating Launcher</string><key>defaults</key><string>com.p6ycode.k4lsnap</string><key>key</key><string>launcherEnabled</string><key>default</key><true/><key>PostNotification</key><string>com.p6ycode.k4lsnap/reload</string></dict>
+    <dict><key>cell</key><string>PSGroupCell</string><key>label</key><string>Media Preparation</string><key>footerText</key><string>Images support rotation, center crop, and resize. Videos support trim ranges, export quality selection, and poster-frame thumbnails. Caption, account, friend, and category metadata are stored in the vault.</string></dict>
+    <dict><key>cell</key><string>PSGroupCell</string><key>label</key><string>System</string><key>footerText</key><string>The resident daemon uses Darwin notifications as triggers and versioned command/result files, preferences, SQLite, cached container identity, diagnostics history, and backups for durable state. Account category masks follow the recovered bit 0 override, bits 1–4 global seed, and bits 5–6 account-only model.</string></dict>
+    <dict><key>cell</key><string>PSGroupCell</string><key>label</key><string>Maintenance</string><key>footerText</key><string>k4lsnapd performs periodic integrity checks, stale draft cleanup, thumbnail repair, container discovery, command processing, diagnostics history, and backup coordination. k4lsnapctl exposes the same cross-process protocol.</string></dict>
+    <dict><key>cell</key><string>PSGroupCell</string><key>footerText</key><string>K4LSnap 0.4.0</string></dict>
 </array>
 </plist>
