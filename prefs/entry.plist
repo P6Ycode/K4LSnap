@@ -1,8 +1,17 @@
-{
-    entry = {
-        bundle = K4LSnapPrefs;
-        cell = PSLinkCell;
-        detail = K4LRootListController;
-        label = K4LSnap;
-    };
-}
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>entry</key>
+    <dict>
+        <key>bundle</key>
+        <string>K4LSnapPrefs</string>
+        <key>cell</key>
+        <string>PSLinkCell</string>
+        <key>detail</key>
+        <string>K4LRootListController</string>
+        <key>label</key>
+        <string>K4LSnap</string>
+    </dict>
+</dict>
+</plist>
