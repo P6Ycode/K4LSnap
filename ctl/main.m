@@ -1,4 +1,5 @@
 #import <Foundation/Foundation.h>
+#import <stdlib.h>
 #import "K4LMaintenance.h"
 
 static void K4LPrintObject(id object) {
@@ -15,7 +16,8 @@ static void K4LUsage(void) {
             "  vacuum              Checkpoint WAL and vacuum the vault database\n"
             "  reload              Broadcast preference and vault reload notifications\n"
             "  ping                Ask the daemon to refresh its status\n"
-            "  status              Print the daemon status plist\n");
+            "  status              Print the daemon status plist\n"
+            "  restart-app         Terminate Snapchat so it relaunches cleanly\n");
 }
 
 int main(int argc, char *argv[]) {
@@ -47,6 +49,10 @@ int main(int argc, char *argv[]) {
             NSDictionary *status = [NSDictionary dictionaryWithContentsOfFile:K4LMaintenanceStatusPath()];
             if (status) K4LPrintObject(status);
             else error = [NSError errorWithDomain:@"com.p6ycode.k4lsnap.ctl" code:2 userInfo:@{NSLocalizedDescriptionKey: @"No daemon status file exists yet"}];
+        } else if ([command isEqualToString:@"restart-app"]) {
+            int result = system("/usr/bin/killall Snapchat >/dev/null 2>&1");
+            if (result == 0) fprintf(stdout, "Snapchat terminated.\n");
+            else error = [NSError errorWithDomain:@"com.p6ycode.k4lsnap.ctl" code:3 userInfo:@{NSLocalizedDescriptionKey: @"Unable to terminate Snapchat, or it was not running"}];
         } else {
             K4LUsage();
             return 64;
