@@ -42,15 +42,23 @@
         <key>cell</key>
         <string>PSGroupCell</string>
         <key>label</key>
+        <string>Media Preparation</string>
+        <key>footerText</key>
+        <string>Images support rotation, center crop, and resize. Videos support trim ranges, export quality selection, and poster-frame thumbnails. Caption, account, friend, and category metadata are stored in the vault.</string>
+    </dict>
+    <dict>
+        <key>cell</key>
+        <string>PSGroupCell</string>
+        <key>label</key>
         <string>Storage</string>
         <key>footerText</key>
-        <string>Vault browsing, search, preview, export, deletion, and storage diagnostics are available from the in-app launcher.</string>
+        <string>Vault browsing, search, thumbnails, preview, metadata editing, export, deletion, pending-draft status, and storage diagnostics are available from the in-app launcher.</string>
     </dict>
     <dict>
         <key>cell</key>
         <string>PSGroupCell</string>
         <key>footerText</key>
-        <string>K4LSnap 0.1.0</string>
+        <string>K4LSnap 0.2.0</string>
     </dict>
 </array>
 </plist>
