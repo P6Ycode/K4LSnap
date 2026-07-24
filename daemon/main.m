@@ -1,5 +1,7 @@
 #import <Foundation/Foundation.h>
 #import <CoreFoundation/CoreFoundation.h>
+#import <signal.h>
+#import <unistd.h>
 #import "K4LMaintenance.h"
 
 static NSString * const K4LDaemonPing = @"com.p6ycode.k4lsnap/daemon-ping";
