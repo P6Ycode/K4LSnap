@@ -1,12 +1,12 @@
 #!/bin/sh
 set -e
 
-PLIST="/Library/LaunchDaemons/com.p6ycode.k4lsnapd.plist"
 if [ -d /var/jb ]; then
     PREFIX="/var/jb"
 else
     PREFIX=""
 fi
+PLIST="${PREFIX}/Library/LaunchDaemons/com.p6ycode.k4lsnapd.plist"
 
 if [ -f "$PLIST" ]; then
     /usr/bin/sed -i "s#<string>/var/jb/usr/libexec/k4lsnapd</string>#<string>${PREFIX}/usr/libexec/k4lsnapd</string>#" "$PLIST" 2>/dev/null || true
