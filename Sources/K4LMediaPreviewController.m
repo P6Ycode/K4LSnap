@@ -1,6 +1,7 @@
 #import "K4LMediaPreviewController.h"
 #import "K4LVaultStore.h"
 #import "K4LSystem.h"
+#import "K4LMetadataEditorViewController.h"
 #import <AVKit/AVKit.h>
 
 @interface K4LMediaPreviewController ()
@@ -22,10 +23,22 @@
     return [NSURL fileURLWithPath:[K4LMediaDirectory() stringByAppendingPathComponent:self.item.relativePath]];
 }
 
+- (void)refreshMetadataDisplay {
+    self.title = self.item.category.length ? self.item.category : @"Preview";
+    NSMutableArray<NSString *> *parts = [NSMutableArray array];
+    if (self.item.caption.length) [parts addObject:self.item.caption];
+    if (self.item.friendID.length) [parts addObject:[@"Friend: " stringByAppendingString:self.item.friendID]];
+    else if (self.item.accountID.length) [parts addObject:[@"Account: " stringByAppendingString:self.item.accountID]];
+    self.navigationItem.prompt = parts.count ? [parts componentsJoinedByString:@" · "] : nil;
+}
+
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = UIColor.systemBackgroundColor;
-    self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAction target:self action:@selector(shareItem)];
+    UIBarButtonItem *share = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAction target:self action:@selector(shareItem)];
+    UIBarButtonItem *edit = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemEdit target:self action:@selector(editMetadata)];
+    self.navigationItem.rightBarButtonItems = @[share, edit];
+    [self refreshMetadataDisplay];
 
     NSURL *url = [self mediaURL];
     if ([self.item.mediaType isEqualToString:@"video"]) {
@@ -71,6 +84,11 @@
     }
 }
 
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+    [self refreshMetadataDisplay];
+}
+
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
     [self.playerController.player play];
@@ -81,12 +99,16 @@
     [self.playerController.player pause];
 }
 
+- (void)editMetadata {
+    [self.navigationController pushViewController:[[K4LMetadataEditorViewController alloc] initWithItem:self.item] animated:YES];
+}
+
 - (void)shareItem {
     NSURL *url = [self mediaURL];
     if (![NSFileManager.defaultManager fileExistsAtPath:url.path]) return;
     UIActivityViewController *activity = [[UIActivityViewController alloc] initWithActivityItems:@[url] applicationActivities:nil];
     if (activity.popoverPresentationController) {
-        activity.popoverPresentationController.barButtonItem = self.navigationItem.rightBarButtonItem;
+        activity.popoverPresentationController.barButtonItem = self.navigationItem.rightBarButtonItems.firstObject;
     }
     [self presentViewController:activity animated:YES completion:nil];
 }
