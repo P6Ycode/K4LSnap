@@ -92,12 +92,13 @@
 
 - (BOOL)open:(NSError **)error {
     __block BOOL ok = YES;
+    __block NSError *blockError = nil;
     dispatch_sync(self.queue, ^{
         if (self.db) return;
         NSError *directoryError = nil;
         if (!K4LEnsureSystemDirectories(&directoryError)) {
             ok = NO;
-            if (error) *error = directoryError;
+            blockError = directoryError;
             return;
         }
         if (sqlite3_open_v2(K4LDatabasePath().fileSystemRepresentation,
@@ -105,18 +106,19 @@
                             SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX,
                             NULL) != SQLITE_OK) {
             ok = NO;
-            if (error) *error = [self errorWithCode:1 message:@(sqlite3_errmsg(self.db))];
+            blockError = [self errorWithCode:1 message:@(sqlite3_errmsg(self.db))];
             if (self.db) sqlite3_close(self.db);
             self.db = NULL;
             return;
         }
         sqlite3_busy_timeout(self.db, 3000);
-        if (![self migrateSchema:error]) {
+        if (![self migrateSchema:&blockError]) {
             ok = NO;
             sqlite3_close(self.db);
             self.db = NULL;
         }
     });
+    if (!ok && error) *error = blockError;
     return ok;
 }
 
@@ -167,6 +169,7 @@ static NSString *K4LColumnText(sqlite3_stmt *stmt, int index) {
     }
 
     __block K4LVaultItem *result = nil;
+    __block NSError *blockError = nil;
     dispatch_sync(self.queue, ^{
         NSString *identifier = NSUUID.UUID.UUIDString;
         NSString *extension = sourceURL.pathExtension.length ? sourceURL.pathExtension.lowercaseString : @"bin";
@@ -178,7 +181,7 @@ static NSString *K4LColumnText(sqlite3_stmt *stmt, int index) {
 
         [NSFileManager.defaultManager removeItemAtPath:destination error:nil];
         if (![NSFileManager.defaultManager copyItemAtPath:sourceURL.path toPath:destination error:&copyError]) {
-            if (error) *error = copyError;
+            blockError = copyError;
             return;
         }
 
@@ -189,7 +192,7 @@ static NSString *K4LColumnText(sqlite3_stmt *stmt, int index) {
             [NSFileManager.defaultManager removeItemAtPath:thumbnailDestination error:nil];
             if (![NSFileManager.defaultManager copyItemAtPath:thumbnailURL.path toPath:thumbnailDestination error:&copyError]) {
                 [NSFileManager.defaultManager removeItemAtPath:destination error:nil];
-                if (error) *error = copyError;
+                blockError = copyError;
                 return;
             }
         }
@@ -202,7 +205,7 @@ static NSString *K4LColumnText(sqlite3_stmt *stmt, int index) {
         if (sqlite3_prepare_v2(self.db, sql, -1, &stmt, NULL) != SQLITE_OK) {
             [NSFileManager.defaultManager removeItemAtPath:destination error:nil];
             if (thumbnailDestination) [NSFileManager.defaultManager removeItemAtPath:thumbnailDestination error:nil];
-            if (error) *error = [self errorWithCode:4 message:@(sqlite3_errmsg(self.db))];
+            blockError = [self errorWithCode:4 message:@(sqlite3_errmsg(self.db))];
             return;
         }
 
@@ -236,11 +239,12 @@ static NSString *K4LColumnText(sqlite3_stmt *stmt, int index) {
         } else {
             [NSFileManager.defaultManager removeItemAtPath:destination error:nil];
             if (thumbnailDestination) [NSFileManager.defaultManager removeItemAtPath:thumbnailDestination error:nil];
-            if (error) *error = [self errorWithCode:5 message:@(sqlite3_errmsg(self.db))];
+            blockError = [self errorWithCode:5 message:@(sqlite3_errmsg(self.db))];
         }
         sqlite3_finalize(stmt);
     });
 
+    if (!result && error) *error = blockError;
     if (result) K4LPostDarwinNotification(K4LNotifyVaultChanged);
     return result;
 }
@@ -251,6 +255,7 @@ static NSString *K4LColumnText(sqlite3_stmt *stmt, int index) {
                                         error:(NSError **)error {
     if (![self open:error]) return @[];
     __block NSMutableArray<K4LVaultItem *> *items = [NSMutableArray array];
+    __block NSError *blockError = nil;
     dispatch_sync(self.queue, ^{
         NSMutableString *sql = [@"SELECT id,relative_path,account_id,friend_id,category,media_type,created_at,byte_size,caption,thumbnail_path,duration FROM media_items WHERE 1=1" mutableCopy];
         NSMutableArray<NSString *> *bindings = [NSMutableArray array];
@@ -269,7 +274,7 @@ static NSString *K4LColumnText(sqlite3_stmt *stmt, int index) {
 
         sqlite3_stmt *stmt = NULL;
         if (sqlite3_prepare_v2(self.db, sql.UTF8String, -1, &stmt, NULL) != SQLITE_OK) {
-            if (error) *error = [self errorWithCode:6 message:@(sqlite3_errmsg(self.db))];
+            blockError = [self errorWithCode:6 message:@(sqlite3_errmsg(self.db))];
             return;
         }
         for (NSInteger index = 0; index < bindings.count; index++) {
@@ -292,6 +297,7 @@ static NSString *K4LColumnText(sqlite3_stmt *stmt, int index) {
         }
         sqlite3_finalize(stmt);
     });
+    if (blockError && error) *error = blockError;
     return items;
 }
 
@@ -303,11 +309,12 @@ static NSString *K4LColumnText(sqlite3_stmt *stmt, int index) {
                         error:(NSError **)error {
     if (![self open:error]) return NO;
     __block BOOL ok = NO;
+    __block NSError *blockError = nil;
     dispatch_sync(self.queue, ^{
         sqlite3_stmt *stmt = NULL;
         const char *sql = "UPDATE media_items SET account_id=?,friend_id=?,category=?,caption=? WHERE id=?";
         if (sqlite3_prepare_v2(self.db, sql, -1, &stmt, NULL) != SQLITE_OK) {
-            if (error) *error = [self errorWithCode:7 message:@(sqlite3_errmsg(self.db))];
+            blockError = [self errorWithCode:7 message:@(sqlite3_errmsg(self.db))];
             return;
         }
         K4LBindNullableText(stmt, 1, accountID);
@@ -316,9 +323,10 @@ static NSString *K4LColumnText(sqlite3_stmt *stmt, int index) {
         K4LBindNullableText(stmt, 4, caption);
         sqlite3_bind_text(stmt, 5, item.identifier.UTF8String, -1, SQLITE_TRANSIENT);
         ok = sqlite3_step(stmt) == SQLITE_DONE && sqlite3_changes(self.db) == 1;
-        if (!ok && error) *error = [self errorWithCode:8 message:@(sqlite3_errmsg(self.db))];
+        if (!ok) blockError = [self errorWithCode:8 message:@(sqlite3_errmsg(self.db))];
         sqlite3_finalize(stmt);
     });
+    if (!ok && error) *error = blockError;
     if (ok) {
         item.accountID = accountID;
         item.friendID = friendID;
@@ -332,13 +340,14 @@ static NSString *K4LColumnText(sqlite3_stmt *stmt, int index) {
 - (BOOL)deleteItem:(K4LVaultItem *)item error:(NSError **)error {
     if (![self open:error]) return NO;
     __block BOOL ok = NO;
+    __block NSError *blockError = nil;
     dispatch_sync(self.queue, ^{
         sqlite3_stmt *stmt = NULL;
         if (sqlite3_prepare_v2(self.db, "DELETE FROM media_items WHERE id=?", -1, &stmt, NULL) == SQLITE_OK) {
             sqlite3_bind_text(stmt, 1, item.identifier.UTF8String, -1, SQLITE_TRANSIENT);
             ok = sqlite3_step(stmt) == SQLITE_DONE && sqlite3_changes(self.db) == 1;
         }
-        if (!ok && error) *error = [self errorWithCode:9 message:@(sqlite3_errmsg(self.db))];
+        if (!ok) blockError = [self errorWithCode:9 message:@(sqlite3_errmsg(self.db))];
         sqlite3_finalize(stmt);
         if (ok) {
             [NSFileManager.defaultManager removeItemAtPath:[K4LMediaDirectory() stringByAppendingPathComponent:item.relativePath] error:nil];
@@ -347,6 +356,7 @@ static NSString *K4LColumnText(sqlite3_stmt *stmt, int index) {
             }
         }
     });
+    if (!ok && error) *error = blockError;
     if (ok) K4LPostDarwinNotification(K4LNotifyVaultChanged);
     return ok;
 }
@@ -354,13 +364,14 @@ static NSString *K4LColumnText(sqlite3_stmt *stmt, int index) {
 - (NSDictionary<NSString *, NSNumber *> *)categoryCountsForAccount:(NSString *)accountID error:(NSError **)error {
     if (![self open:error]) return @{};
     __block NSMutableDictionary<NSString *, NSNumber *> *output = [NSMutableDictionary dictionary];
+    __block NSError *blockError = nil;
     dispatch_sync(self.queue, ^{
         const char *sql = accountID
             ? "SELECT COALESCE(category,''),COUNT(*) FROM media_items WHERE account_id=? GROUP BY category"
             : "SELECT COALESCE(category,''),COUNT(*) FROM media_items GROUP BY category";
         sqlite3_stmt *stmt = NULL;
         if (sqlite3_prepare_v2(self.db, sql, -1, &stmt, NULL) != SQLITE_OK) {
-            if (error) *error = [self errorWithCode:10 message:@(sqlite3_errmsg(self.db))];
+            blockError = [self errorWithCode:10 message:@(sqlite3_errmsg(self.db))];
             return;
         }
         if (accountID.length) sqlite3_bind_text(stmt, 1, accountID.UTF8String, -1, SQLITE_TRANSIENT);
@@ -370,6 +381,7 @@ static NSString *K4LColumnText(sqlite3_stmt *stmt, int index) {
         }
         sqlite3_finalize(stmt);
     });
+    if (blockError && error) *error = blockError;
     return output;
 }
 
