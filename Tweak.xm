@@ -3,9 +3,11 @@
 #import "K4LSystem.h"
 #import "K4LPreferences.h"
 #import "K4LVaultStore.h"
+#import "K4LLauncher.h"
 
 static void K4LReloadCallback(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo) {
     [[K4LPreferences shared] reload];
+    [[K4LLauncher shared] reloadVisibility];
     NSLog(@"[K4LSnap] preferences reloaded");
 }
 
@@ -24,6 +26,7 @@ static void K4LReloadCallback(CFNotificationCenterRef center, void *observer, CF
         }
         (void)[K4LPreferences shared];
         CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, K4LReloadCallback, (__bridge CFStringRef)K4LNotifyReload, NULL, CFNotificationSuspensionBehaviorDeliverImmediately);
+        [[K4LLauncher shared] install];
         NSLog(@"[K4LSnap] system online");
     }
 }
