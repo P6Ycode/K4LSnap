@@ -1,5 +1,6 @@
 #import "K4LMetadataEditorViewController.h"
 #import "K4LVaultStore.h"
+#import "K4LPendingSendStore.h"
 
 @interface K4LMetadataEditorViewController () <UITextFieldDelegate>
 @property (nonatomic, strong) K4LVaultItem *item;
@@ -74,13 +75,20 @@
 - (void)saveMetadata {
     [self.view endEditing:YES];
     self.navigationItem.rightBarButtonItem.enabled = NO;
+    NSString *caption = [self clean:self.captionField];
     NSError *error = nil;
     BOOL ok = [[K4LVaultStore shared] updateMetadataForItem:self.item
                                                   accountID:[self clean:self.accountField]
                                                    friendID:[self clean:self.friendField]
                                                    category:[self clean:self.categoryField]
-                                                    caption:[self clean:self.captionField]
+                                                    caption:caption
                                                       error:&error];
+    if (ok) {
+        K4LPendingSend *pending = [[K4LPendingSendStore shared] currentDraft];
+        if ([pending.itemIdentifier isEqualToString:self.item.identifier]) {
+            ok = [[K4LPendingSendStore shared] setPendingItem:self.item caption:caption wholeStory:pending.wholeStory error:&error];
+        }
+    }
     self.navigationItem.rightBarButtonItem.enabled = YES;
     if (!ok) {
         UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"K4LSnap"
