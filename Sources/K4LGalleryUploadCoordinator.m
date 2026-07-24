@@ -1,7 +1,9 @@
 #import "K4LGalleryUploadCoordinator.h"
 #import "K4LVaultStore.h"
 #import "K4LFeaturePolicy.h"
+#import "K4LSystem.h"
 #import <PhotosUI/PhotosUI.h>
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 
 @interface K4LGalleryUploadCoordinator () <PHPickerViewControllerDelegate>
 @property (nonatomic, weak) UIViewController *presenter;
