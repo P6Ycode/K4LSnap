@@ -1,6 +1,7 @@
 #import "K4LMediaProcessor.h"
 #import "K4LSystem.h"
 #import <AVFoundation/AVFoundation.h>
+#import <math.h>
 
 @implementation K4LMediaProcessingOptions
 - (instancetype)init {
@@ -10,6 +11,7 @@
         _maximumDimension = 0;
         _trimStart = 0;
         _trimEnd = 0;
+        _videoExportPreset = K4LVideoExportPresetHighest;
     }
     return self;
 }
@@ -166,6 +168,20 @@
     return image;
 }
 
++ (NSString *)preferredVideoPresetForOptions:(K4LMediaProcessingOptions *)options asset:(AVAsset *)asset {
+    NSString *requested = AVAssetExportPresetHighestQuality;
+    switch (options.videoExportPreset) {
+        case K4LVideoExportPreset1080p: requested = AVAssetExportPreset1920x1080; break;
+        case K4LVideoExportPreset720p: requested = AVAssetExportPreset1280x720; break;
+        case K4LVideoExportPresetMedium: requested = AVAssetExportPresetMediumQuality; break;
+        case K4LVideoExportPresetHighest: default: break;
+    }
+    NSArray<NSString *> *compatible = [AVAssetExportSession exportPresetsCompatibleWithAsset:asset];
+    if ([compatible containsObject:requested]) return requested;
+    if ([compatible containsObject:AVAssetExportPresetHighestQuality]) return AVAssetExportPresetHighestQuality;
+    return compatible.firstObject;
+}
+
 + (void)processVideoURL:(NSURL *)sourceURL
                 options:(K4LMediaProcessingOptions *)options
              completion:(void (^)(K4LMediaProcessingResult *, NSError *))completion {
@@ -183,9 +199,14 @@
         return;
     }
 
-    AVAssetExportSession *exportSession = [[AVAssetExportSession alloc] initWithAsset:asset presetName:AVAssetExportPresetHighestQuality];
+    NSString *preset = [self preferredVideoPresetForOptions:options asset:asset];
+    if (!preset.length) {
+        [self complete:completion result:nil error:[self errorWithCode:6 message:@"No compatible video export preset is available"]];
+        return;
+    }
+    AVAssetExportSession *exportSession = [[AVAssetExportSession alloc] initWithAsset:asset presetName:preset];
     if (!exportSession) {
-        [self complete:completion result:nil error:[self errorWithCode:6 message:@"Unable to create a video export session"]];
+        [self complete:completion result:nil error:[self errorWithCode:7 message:@"Unable to create a video export session"]];
         return;
     }
 
@@ -195,11 +216,15 @@
     exportSession.shouldOptimizeForNetworkUse = YES;
     exportSession.timeRange = CMTimeRangeFromTimeToTime(CMTimeMakeWithSeconds(start, 600), CMTimeMakeWithSeconds(end, 600));
     if ([exportSession.supportedFileTypes containsObject:AVFileTypeMPEG4]) exportSession.outputFileType = AVFileTypeMPEG4;
-    else exportSession.outputFileType = exportSession.supportedFileTypes.firstObject;
+    else if (exportSession.supportedFileTypes.firstObject) exportSession.outputFileType = exportSession.supportedFileTypes.firstObject;
+    else {
+        [self complete:completion result:nil error:[self errorWithCode:8 message:@"The export session has no supported output type"]];
+        return;
+    }
 
     [exportSession exportAsynchronouslyWithCompletionHandler:^{
         if (exportSession.status != AVAssetExportSessionStatusCompleted) {
-            NSError *error = exportSession.error ?: [self errorWithCode:7 message:@"Video export failed"];
+            NSError *error = exportSession.error ?: [self errorWithCode:9 message:@"Video export failed"];
             [NSFileManager.defaultManager removeItemAtURL:outputURL error:nil];
             [self complete:completion result:nil error:error];
             return;
@@ -210,7 +235,7 @@
             UIImage *poster = [self posterImageForVideoURL:outputURL atTime:0 error:&posterError];
             if (!poster) {
                 [NSFileManager.defaultManager removeItemAtURL:outputURL error:nil];
-                [self complete:completion result:nil error:posterError ?: [self errorWithCode:8 message:@"Unable to generate a video poster frame"]];
+                [self complete:completion result:nil error:posterError ?: [self errorWithCode:10 message:@"Unable to generate a video poster frame"]];
                 return;
             }
             poster = [self image:poster resizedToMaximumDimension:360];
