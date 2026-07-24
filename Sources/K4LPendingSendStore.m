@@ -41,12 +41,14 @@
 - (BOOL)setPendingItem:(K4LVaultItem *)item caption:(NSString *)caption wholeStory:(BOOL)wholeStory error:(NSError **)error {
     if (!item.identifier.length) {
         if (error) *error = [NSError errorWithDomain:@"com.p6ycode.k4lsnap.pending-send"
-                                               code:1
-                                           userInfo:@{NSLocalizedDescriptionKey: @"The vault item has no identifier"}];
+                                                code:1
+                                            userInfo:@{NSLocalizedDescriptionKey: @"The vault item has no identifier"}];
         return NO;
     }
     if (!K4LEnsureSystemDirectories(error)) return NO;
+
     __block BOOL ok = NO;
+    __block NSError *blockError = nil;
     dispatch_sync(self.queue, ^{
         NSMutableDictionary *dictionary = [@{
             @"itemIdentifier": item.identifier,
@@ -55,21 +57,24 @@
         } mutableCopy];
         if (caption.length) dictionary[@"caption"] = caption;
         ok = [dictionary writeToFile:K4LPendingSendPath() atomically:YES];
-        if (!ok && error) {
-            *error = [NSError errorWithDomain:@"com.p6ycode.k4lsnap.pending-send"
-                                         code:2
-                                     userInfo:@{NSLocalizedDescriptionKey: @"Unable to persist the pending send draft"}];
+        if (!ok) {
+            blockError = [NSError errorWithDomain:@"com.p6ycode.k4lsnap.pending-send"
+                                             code:2
+                                         userInfo:@{NSLocalizedDescriptionKey: @"Unable to persist the pending send draft"}];
         }
     });
+    if (!ok && error) *error = blockError;
     return ok;
 }
 
 - (BOOL)clear:(NSError **)error {
     __block BOOL ok = YES;
+    __block NSError *blockError = nil;
     dispatch_sync(self.queue, ^{
         if (![NSFileManager.defaultManager fileExistsAtPath:K4LPendingSendPath()]) return;
-        ok = [NSFileManager.defaultManager removeItemAtPath:K4LPendingSendPath() error:error];
+        ok = [NSFileManager.defaultManager removeItemAtPath:K4LPendingSendPath() error:&blockError];
     });
+    if (!ok && error) *error = blockError;
     return ok;
 }
 
