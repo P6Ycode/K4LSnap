@@ -1,0 +1,8 @@
+{
+    entry = {
+        bundle = K4LSnapPrefs;
+        cell = PSLinkCell;
+        detail = K4LRootListController;
+        label = K4LSnap;
+    };
+}
