@@ -98,6 +98,15 @@
     return controller;
 }
 
+- (void)dismissPresentedController {
+    UIViewController *controller = [self topViewController];
+    [controller dismissViewControllerAnimated:YES completion:nil];
+}
+
+- (UIBarButtonItem *)closeButton {
+    return [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemClose target:self action:@selector(dismissPresentedController)];
+}
+
 - (void)showMenu {
     UIViewController *presenter = [self topViewController];
     if (!presenter) return;
@@ -109,16 +118,18 @@
         [[K4LGalleryUploadCoordinator sharedCoordinator] presentFilesFromViewController:presenter];
     }]];
     [sheet addAction:[UIAlertAction actionWithTitle:@"Media Vault" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
-        UINavigationController *navigation = [[UINavigationController alloc] initWithRootViewController:[K4LVaultViewController new]];
+        K4LVaultViewController *vault = [K4LVaultViewController new];
+        vault.navigationItem.leftBarButtonItem = [self closeButton];
+        UINavigationController *navigation = [[UINavigationController alloc] initWithRootViewController:vault];
         navigation.modalPresentationStyle = UIModalPresentationFullScreen;
         [presenter presentViewController:navigation animated:YES completion:nil];
-        navigation.topViewController.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemClose target:navigation action:@selector(dismissViewControllerAnimated:completion:)];
     }]];
     [sheet addAction:[UIAlertAction actionWithTitle:@"Settings" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
-        UINavigationController *navigation = [[UINavigationController alloc] initWithRootViewController:[K4LSettingsViewController new]];
+        K4LSettingsViewController *settings = [K4LSettingsViewController new];
+        settings.navigationItem.leftBarButtonItem = [self closeButton];
+        UINavigationController *navigation = [[UINavigationController alloc] initWithRootViewController:settings];
         navigation.modalPresentationStyle = UIModalPresentationFormSheet;
         [presenter presentViewController:navigation animated:YES completion:nil];
-        navigation.topViewController.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemClose target:navigation action:@selector(dismissViewControllerAnimated:completion:)];
     }]];
     [sheet addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
     if (sheet.popoverPresentationController) {
