@@ -27,5 +27,8 @@ K4LSnap_LIBRARIES = sqlite3
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 
-SUBPROJECTS += prefs
+SUBPROJECTS += prefs daemon ctl
 include $(THEOS_MAKE_PATH)/aggregate.mk
+
+before-package::
+	python3 scripts/validate_project.py
