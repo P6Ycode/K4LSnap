@@ -1,0 +1,12 @@
+#!/bin/sh
+set -e
+
+if [ -d /var/jb ]; then
+    PREFIX="/var/jb"
+else
+    PREFIX=""
+fi
+PLIST="${PREFIX}/Library/LaunchDaemons/com.p6ycode.k4lsnapd.plist"
+
+/bin/launchctl bootout system/com.p6ycode.k4lsnapd 2>/dev/null || /bin/launchctl unload "$PLIST" 2>/dev/null || true
+exit 0
