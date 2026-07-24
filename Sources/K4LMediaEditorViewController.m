@@ -4,6 +4,7 @@
 #import "K4LPendingSendStore.h"
 #import "K4LSystem.h"
 #import <AVFoundation/AVFoundation.h>
+#import <math.h>
 
 @interface K4LMediaEditorViewController () <UITextFieldDelegate>
 @property (nonatomic, strong) NSURL *sourceURL;
@@ -15,6 +16,7 @@
 @property (nonatomic, strong) UITextField *categoryField;
 @property (nonatomic, strong) UISegmentedControl *cropControl;
 @property (nonatomic, strong) UISegmentedControl *sizeControl;
+@property (nonatomic, strong) UISegmentedControl *videoQualityControl;
 @property (nonatomic, strong) UITextField *trimStartField;
 @property (nonatomic, strong) UITextField *trimEndField;
 @property (nonatomic, strong) UISwitch *wholeStorySwitch;
@@ -133,6 +135,11 @@
         self.trimStartField.text = @"0";
         [stack addArrangedSubview:self.trimStartField];
         [stack addArrangedSubview:self.trimEndField];
+
+        [stack addArrangedSubview:[self sectionLabel:@"Export quality"]];
+        self.videoQualityControl = [[UISegmentedControl alloc] initWithItems:@[@"Highest", @"1080p", @"720p", @"Medium"]];
+        self.videoQualityControl.selectedSegmentIndex = 0;
+        [stack addArrangedSubview:self.videoQualityControl];
     } else {
         [stack addArrangedSubview:[self sectionLabel:@"Image transform"]];
         self.cropControl = [[UISegmentedControl alloc] initWithItems:@[@"Original", @"Square", @"9:16"]];
@@ -223,6 +230,7 @@
     } else {
         options.trimStart = self.trimStartField.text.doubleValue;
         options.trimEnd = self.trimEndField.text.doubleValue;
+        options.videoExportPreset = (K4LVideoExportPreset)self.videoQualityControl.selectedSegmentIndex;
     }
 
     [self setBusy:YES];
@@ -267,7 +275,7 @@
                 activity.popoverPresentationController.sourceRect = CGRectMake(CGRectGetMidX(self.view.bounds), CGRectGetMidY(self.view.bounds), 1, 1);
             }
             activity.completionWithItemsHandler = ^(__unused UIActivityType activityType, __unused BOOL completed, __unused NSArray *returnedItems, __unused NSError *activityError) {
-                [self showSavedMessage];
+                dispatch_async(dispatch_get_main_queue(), ^{ [self showSavedMessage]; });
             };
             [self presentViewController:activity animated:YES completion:nil];
         } else {
@@ -277,7 +285,10 @@
 }
 
 - (void)showSavedMessage {
-    if (self.presentedViewController) return;
+    if (self.presentedViewController) {
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{ [self showSavedMessage]; });
+        return;
+    }
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Saved"
                                                                    message:@"The processed media is in the vault and is now the current pending-send draft."
                                                             preferredStyle:UIAlertControllerStyleAlert];
