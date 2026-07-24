@@ -28,11 +28,20 @@
 }
 
 - (UIWindow *)keyWindow {
+    UIWindow *fallback = nil;
     for (UIScene *scene in UIApplication.sharedApplication.connectedScenes) {
-        if (![scene isKindOfClass:UIWindowScene.class] || scene.activationState != UISceneActivationStateForegroundActive) continue;
-        for (UIWindow *window in ((UIWindowScene *)scene).windows) if (window.isKeyWindow) return window;
+        if (![scene isKindOfClass:UIWindowScene.class]) continue;
+        if (scene.activationState != UISceneActivationStateForegroundActive &&
+            scene.activationState != UISceneActivationStateForegroundInactive) continue;
+
+        for (UIWindow *window in ((UIWindowScene *)scene).windows) {
+            if (window.isKeyWindow) return window;
+            if (!fallback && !window.hidden && window.alpha > 0 && window.windowLevel == UIWindowLevelNormal) {
+                fallback = window;
+            }
+        }
     }
-    return UIApplication.sharedApplication.windows.firstObject;
+    return fallback;
 }
 
 - (void)attachToKeyWindow {
