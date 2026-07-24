@@ -77,6 +77,7 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = UIColor.systemBackgroundColor;
+    self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemCancel target:self action:@selector(cancelEditor)];
 
     UIScrollView *scrollView = [UIScrollView new];
     scrollView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -172,6 +173,10 @@
     [self loadPreview];
 }
 
+- (void)cancelEditor {
+    if (self.saveButton.enabled) [self.navigationController dismissViewControllerAnimated:YES completion:nil];
+}
+
 - (void)loadPreview {
     if ([self.mediaType isEqualToString:@"video"]) {
         AVURLAsset *asset = [AVURLAsset URLAssetWithURL:self.sourceURL options:nil];
@@ -202,7 +207,7 @@
 
 - (void)setBusy:(BOOL)busy {
     self.saveButton.enabled = !busy;
-    self.navigationItem.hidesBackButton = busy;
+    self.navigationItem.leftBarButtonItem.enabled = !busy;
     if (busy) [self.activityIndicator startAnimating];
     else [self.activityIndicator stopAnimating];
 }
@@ -257,19 +262,28 @@
         NSURL *storedURL = [NSURL fileURLWithPath:[K4LMediaDirectory() stringByAppendingPathComponent:item.relativePath]];
         if (self.shareAfterSaveSwitch.isOn) {
             UIActivityViewController *activity = [[UIActivityViewController alloc] initWithActivityItems:@[storedURL] applicationActivities:nil];
-            if (activity.popoverPresentationController) activity.popoverPresentationController.sourceView = self.view;
+            if (activity.popoverPresentationController) {
+                activity.popoverPresentationController.sourceView = self.view;
+                activity.popoverPresentationController.sourceRect = CGRectMake(CGRectGetMidX(self.view.bounds), CGRectGetMidY(self.view.bounds), 1, 1);
+            }
+            activity.completionWithItemsHandler = ^(__unused UIActivityType activityType, __unused BOOL completed, __unused NSArray *returnedItems, __unused NSError *activityError) {
+                [self showSavedMessage];
+            };
             [self presentViewController:activity animated:YES completion:nil];
+        } else {
+            [self showSavedMessage];
         }
-        [self showSavedMessage];
     }];
 }
 
 - (void)showSavedMessage {
+    if (self.presentedViewController) return;
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Saved"
                                                                    message:@"The processed media is in the vault and is now the current pending-send draft."
                                                             preferredStyle:UIAlertControllerStyleAlert];
     [alert addAction:[UIAlertAction actionWithTitle:@"Done" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
-        [self.navigationController popViewControllerAnimated:YES];
+        if (self.navigationController.presentingViewController) [self.navigationController dismissViewControllerAnimated:YES completion:nil];
+        else [self.navigationController popViewControllerAnimated:YES];
     }]];
     [self presentViewController:alert animated:YES completion:nil];
 }
