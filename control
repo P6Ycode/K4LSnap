@@ -1,8 +1,8 @@
 Package: com.p6ycode.k4lsnap
 Name: K4LSnap
-Version: 0.3.0
+Version: 0.4.0
 Architecture: iphoneos-arm
-Description: Gallery media preparation, local Media Vault, maintenance daemon, and control tools for Snapchat.
+Description: Gallery media preparation, local Media Vault, report-aligned system protocol, maintenance daemon, and control tools for Snapchat.
 Maintainer: P6Ycode
 Author: P6Ycode
 Section: Tweaks
