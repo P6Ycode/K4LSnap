@@ -50,15 +50,15 @@
         <key>cell</key>
         <string>PSGroupCell</string>
         <key>label</key>
-        <string>Storage</string>
+        <string>Maintenance</string>
         <key>footerText</key>
-        <string>Vault browsing, search, thumbnails, preview, metadata editing, export, deletion, pending-draft status, and storage diagnostics are available from the in-app launcher.</string>
+        <string>k4lsnapd performs periodic integrity checks, stale draft cleanup, and thumbnail repair. k4lsnapctl exposes health, prune, repair-thumbnails, vacuum, reload, ping, and status commands.</string>
     </dict>
     <dict>
         <key>cell</key>
         <string>PSGroupCell</string>
         <key>footerText</key>
-        <string>K4LSnap 0.2.0</string>
+        <string>K4LSnap 0.3.0</string>
     </dict>
 </array>
 </plist>
