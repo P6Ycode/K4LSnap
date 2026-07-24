@@ -16,7 +16,11 @@ K4LSnap_FILES = Tweak.xm \
     Sources/K4LLauncher.m \
     Sources/K4LVaultViewController.m \
     Sources/K4LMediaPreviewController.m \
-    Sources/K4LSettingsViewController.m
+    Sources/K4LSettingsViewController.m \
+    Sources/K4LMediaProcessor.m \
+    Sources/K4LPendingSendStore.m \
+    Sources/K4LMediaEditorViewController.m \
+    Sources/K4LMetadataEditorViewController.m
 K4LSnap_CFLAGS = -fobjc-arc -I$(THEOS_PROJECT_DIR)/Headers
 K4LSnap_FRAMEWORKS = UIKit Photos PhotosUI AVFoundation AVKit UniformTypeIdentifiers
 K4LSnap_LIBRARIES = sqlite3
