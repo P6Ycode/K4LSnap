@@ -1,0 +1,61 @@
+name: Build K4LSnap deb
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - agent/initial-feature-spine
+    paths-ignore:
+      - '**/*.md'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: k4lsnap-deb-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-rootless-deb:
+    name: Build rootless deb
+    runs-on: macos-14
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          brew update
+          brew install ldid xz
+
+      - name: Install Theos
+        run: |
+          git clone --recursive --depth 1 https://github.com/theos/theos.git "$GITHUB_WORKSPACE/theos"
+          echo "THEOS=$GITHUB_WORKSPACE/theos" >> "$GITHUB_ENV"
+
+      - name: Validate project
+        run: python3 scripts/validate_project.py
+
+      - name: Build package
+        env:
+          THEOS_PACKAGE_SCHEME: rootless
+        run: |
+          make clean package FINALPACKAGE=1 DEBUG=0 messages=yes
+          test -n "$(find packages -maxdepth 1 -type f -name '*.deb' -print -quit)"
+
+      - name: Show package details
+        run: |
+          ls -lah packages
+          for package in packages/*.deb; do
+            dpkg-deb --info "$package"
+          done
+
+      - name: Upload deb artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: K4LSnap-0.4.0-rootless-deb
+          path: packages/*.deb
+          if-no-files-found: error
+          retention-days: 14
